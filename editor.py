@@ -1,6 +1,28 @@
 from graph import *
 
-print("Commands:\n -traverse\n -go to\n -back\n -search\n -state info\n -state info id\n -edit player\n -edit state\n -delete state\n -delete state id\n -add path\n -edit path\n -delete path\n -add strength\n -remove strength\n -save\n -exit")
+helpString = str("Commands:\n"
+      " -traverse: Traverse to one of the connected states through a path\n"
+      " -go to: Go to the state with the specified id\n"
+      " -back: Go back to the state you previously were in\n"
+      " -search: Search for a state by including snippets of its prompt\n"
+      " -state info: See information about the current state\n"
+      " -state info id: See information about the state with the specified id\n"
+      " -edit player: Edit player's data\n"
+      " -edit state: Edit state's data\n"
+      " -delete state: Delete the current state\n"
+      " -delete state id: Delete the state with the specified id\n"
+      " -add path: Add a new path to the current state\n"
+      " -edit path: Edit one of the current state's paths\n"
+      " -delete path: Delete one of the current state's path\n"
+      " -add type: Add a new type (Battle System)\n"
+      " -remove type: Remove a type (Battle System)\n"
+      " -types: View all types and their strengths (Battle System)\n"
+      " -add strength: Add a strength to the specified type (Battle System)\n"
+      " -remove strength: Remove a strength from the specified type (Battle System)\n"
+      " -save: Save current data\n"
+      " -exit: Save data and end program execution")
+
+print(helpString)
 
 graph = Graph()
 file = input("Enter file name: ") + ".game"
@@ -16,14 +38,14 @@ vertexStack = []
 
 while True:
     try:
-        answer = input()
+        answer = input("Enter command... ")
         if answer == "go to":
             i = int(input("Enter state id: "))
             vertexStack.append(vertex)
             vertex = graph.vertexes[i]
             print(f"Located on state {i}: '{vertex.text}'")
         elif answer == "search":
-            print(graph.findVertexSnippet(input("Enter snippet of prompt: ")))
+            print(graph.findVertexSnippet(input("Enter snippets of prompt: ")))
         elif answer == "state info":
             print(vertex.toDict())
         elif answer == "state info id":
@@ -72,11 +94,13 @@ while True:
                 print("State text changed")
             elif choice.lower() == "event":
                 oldEvent = vertex.event
-                vertex.event = int(input("Enter event (0=None, 1=Win, 2=Loss, 3=Item, 4=Battle, 5=Weapon, 6=Heal, 7=Repair): "))
+                vertex.event = int(input("Enter event (0=None, 1=Win, 2=Loss, 3=Item, 4=Battle, 5=Weapon, 6=Heal, 7=Repair, 8=Input): "))
                 if vertex.event == oldEvent:
                     print("State event remained the same")
                     continue
                 print("State event changed")
+                if vertex.event == 0 or vertex.event == 1 or vertex.event == 2:
+                    vertex.item = ""
                 if vertex.event == 3:
                     vertex.item = input("Enter item name: ")
                     print("State item changed")
@@ -111,6 +135,9 @@ while True:
                 if vertex.event == 7:
                     vertex.item = int(input("Enter uses value: "))
                     print("State uses value changed")
+                if vertex.event == 8:
+                    vertex.item = input("Enter variable name: ")
+                    print("State variable name changed")
             elif choice.lower() == "item":
                 if vertex.event == 3:
                     vertex.item = input("Enter item name: ")
@@ -147,6 +174,9 @@ while True:
                 elif vertex.event == 7:
                     vertex.item = int(input("Enter uses value: "))
                     print("State uses value changed")
+                elif vertex.event == 8:
+                    vertex.item = input("Enter variable name: ")
+                    print("State variable name changed")
                 else:
                     print("State has no item to modify")
             else:
@@ -194,7 +224,7 @@ while True:
                 edgeItem = input("Enter path item name: ")
             if input("Create new state? (Y/N) ").upper() == "Y":
                 vertexText = input("Enter state prompt: ")
-                vertexEvent = int(input("Enter event (0=None, 1=Win, 2=Loss, 3=Item, 4=Battle, 5=Weapon, 6=Heal, 7=Repair): "))
+                vertexEvent = int(input("Enter event (0=None, 1=Win, 2=Loss, 3=Item, 4=Battle, 5=Weapon, 6=Heal, 7=Repair 8=Input): "))
                 vertexItem = ""
                 if vertexEvent == 3:
                     vertexItem = input("Enter state item name: ")
@@ -222,6 +252,8 @@ while True:
                     vertexItem = int(input("Enter hp value: "))
                 if vertexEvent == 7:
                     vertexItem = int(input("Enter uses value: "))
+                if vertexEvent == 8:
+                    vertexItem = input("Enter variable name: ")
                 v = Vertex(vertexText, vertexEvent, vertexItem)
                 graph.addVertex(v)
                 i = graph.vertexes.index(v)
@@ -253,22 +285,26 @@ while True:
             vertexStack.append(vertex)
             vertex = graph.vertexes[i]
             print(f"Located on state {i}: '{vertex.text}'")
+        elif answer == "add type":
+            graph.addType(input("Enter type: "))
+            print("Type added")
+        elif answer == "remove type":
+            print("Type removed") if graph.removeType(input("Enter type: ")) else print("Type does not exist")
+        elif answer == "types":
+            print(graph.strengths)
         elif answer == "add strength":
-            type = input("Enter type: ")
-            if graph.strengths.get(type) is None:
-                graph.strengths[type] = []
-            graph.strengths[type].append(input("Enter type's strength: "))
+            graph.addStrength(input("Enter type to edit: "), input("Enter strength: "))
             print("Strength for type added")
         elif answer == "remove strength":
-            type = input("Enter type: ")
-            graph.strengths[type].remove(input("Enter type's strength: "))
-            print("Strength for type removed")
+            print("Strength for type removed") if graph.removeStrength(input("Enter type to edit: "), input("Enter strength: ")) else print("Type or strength does not exist")
         elif answer == "back":
             if len(vertexStack) > 0:
                 vertex = vertexStack.pop()
                 print(f"Located on state {graph.vertexes.index(vertex)}: '{vertex.text}'")
             else:
                 print("No previous state available to go back to")
+        elif answer == "help":
+            print(helpString)
         elif answer == "save":
             graph.save(file)
             print("File saved")

@@ -17,6 +17,7 @@ while True:
             vertex = graph.vertexes[json.loads(load.readline().strip())]
             player = Entity.fromDict(json.loads(load.readline().strip()))
             items = json.loads(load.readline().strip())
+            variables = json.loads(load.readline().strip())
             info = json.loads(load.readline().strip())
             for i in range(len(graph.vertexes)):
                 if graph.vertexes[i] is not None:
@@ -27,6 +28,7 @@ while True:
         vertex = graph.vertexes[0]
         player = graph.player
         items = []
+        variables = {}
 
     os.system("cls")
 
@@ -35,11 +37,65 @@ while True:
             save.write(json.dumps(graph.vertexes.index(vertex)) + "\n")
             save.write(json.dumps(player.toDict()) + "\n")
             save.write(json.dumps(items) + "\n")
+            save.write(json.dumps(variables) + "\n")
             save.write(json.dumps([[v.event, [e.locked for e in v.edges]] if v is not None else None for v in graph.vertexes]) + "\n")
+
+
+    def findClosingParenthesis(text, index, starter="(", ender=")"):
+        if text[index] != starter:
+            return -1
+        memory = 1
+        for i in range(index + 1, len(text)):
+            if text[i] == starter:
+                memory += 1
+            elif text[i] == ender:
+                memory -= 1
+            if memory == 0:
+                return i
+        return -1
+
+    def parseText(text):
+        copy = text.replace("\\n", "\n")
+        i = 0
+        prefix = "$"
+        starter = "{"
+        ender = "}"
+        while i != -1:
+            i = copy.find(prefix, i)
+            if i != -1:
+                j = copy.find(starter, i)
+                if j != -1:
+                    k = findClosingParenthesis(copy, j, starter, ender)
+                    if k != -1:
+                        key = copy[i + 1:j]
+                        value = parseText(copy[j + 1:k])
+                        result = ""
+                        temp = len(copy)
+                        if key == "player":
+                            if value == "name":
+                                result = player.name
+                            if value == "hp":
+                                result = player.hp
+                            if value == "maxhp":
+                                result = player.maxhp
+                            if value == "type":
+                                result = player.type
+                        if key == "var":
+                            result = variables[value] if variables.get(value) else "null"
+                        if key == "math":
+                            try:
+                                result = str(eval(value))
+                            except:
+                                result = prefix + key + starter + value + ender
+                        copy = copy[:i] + result + (copy[k + 1:] if k < len(copy) - 1 else "")
+                        k += len(copy) - temp
+                    j = k
+                i = j
+        return copy
 
     while True:
         try:
-            print(vertex.text.replace("[player]", player.name))
+            print(parseText(vertex.text))
 
             if vertex.event == 1:
                 print("Event: You won!")
@@ -137,6 +193,10 @@ while True:
                 for weapon in player.weapons:
                     weapon.repair(vertex.item)
                 vertex.event = 0
+                saveData()
+            if vertex.event == 8:
+                variables[vertex.item] = input(f"Event: Enter value for {vertex.item}... ")
+                print(f"Event: Value for {vertex.item} saved")
                 saveData()
 
             for i in range(len(vertex.edges)):

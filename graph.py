@@ -79,10 +79,40 @@ class Graph:
 
     def findVertexSnippet(self, text):
         results = {}
+        snippets = [snippet.lower() for snippet in text.split(" ")]
         for i in range(len(self.vertexes)):
-            if self.vertexes[i] is not None and text in self.vertexes[i].text:
-                results[i] = self.vertexes[i].text
+            if self.vertexes[i] is not None:
+                found = True
+                vertexText = self.vertexes[i].text.lower()
+                for snippet in snippets:
+                    if snippet not in vertexText:
+                        found = False
+                        break
+                if found:
+                    results[i] = self.vertexes[i].text
         return results
+
+    def addType(self, type):
+        self.strengths[type] = []
+        return True
+
+    def removeType(self, type):
+        if self.strengths.get(type) is None:
+            return False
+        self.strengths.pop(type)
+        return True
+
+    def addStrength(self, type, strength):
+        if self.strengths.get(type) is None:
+            return False
+        self.strengths[type].append(strength)
+        return True
+
+    def removeStrength(self, type, strength):
+        if self.strengths.get(type) is None or strength not in self.strengths[type]:
+            return False
+        self.strengths[type].remove(strength)
+        return True
 
     def save(self, file):
         with open(file, "w") as save:
